@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+kafka-python
+tweepy
+praw
+sqlalchemy
+psycopg2-binary
+pydantic
+redis
+pandas
+scikit-learn
+transformers
+torch
