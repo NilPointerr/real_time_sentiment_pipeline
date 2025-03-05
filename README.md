@@ -24,3 +24,6 @@ real-time-sentiment-analysis/
 │── requirements.txt            # Python dependencies
 │── main.py                     # FastAPI entry point
 │── README.md                   # Project documentation
+
+
+uvicorn main:app --reload
