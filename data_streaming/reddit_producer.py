@@ -206,7 +206,7 @@ def stream_reddit_posts():
     subreddit = reddit.subreddit("all")  # Get posts from all subreddits
 
     try:
-        for post in subreddit.stream.submissions(skip_existing=True):
+        for post in subreddit.stream.submissions(skip_existing=True, pause_after=2):
             if not streaming_active:
                 print("⏹️ Stopping Reddit stream...")
                 break

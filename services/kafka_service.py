@@ -1,39 +1,3 @@
-# from fastapi import APIRouter, BackgroundTasks
-# from data_streaming.reddit_producer import stream_reddit_posts
-
-# router = APIRouter()
-
-# # Dictionary to keep track of running subreddit streams
-# active_streams = {}
-
-# @router.post("/start_reddit_stream")
-# async def start_reddit_stream(subreddit: str, background_tasks: BackgroundTasks):
-#     """
-#     Start streaming posts from a specified subreddit to Kafka.
-#     Runs as a background task.
-#     """
-#     if subreddit in active_streams:
-#         return {"message": f"Streaming for subreddit '{subreddit}' is already running."}
-
-#     # Add the streaming function as a background task
-#     background_tasks.add_task(stream_reddit_posts, subreddit)
-#     active_streams[subreddit] = True
-
-#     return {"message": f"Started streaming Reddit posts for subreddit: {subreddit}"}
-
-# @router.post("/stop_reddit_stream")
-# async def stop_reddit_stream(subreddit: str):
-#     """
-#     Stop streaming posts from a specified subreddit.
-#     """
-#     if subreddit not in active_streams:
-#         return {"message": f"No active stream found for subreddit '{subreddit}'."}
-    
-#     del active_streams[subreddit]  # Remove from active streams
-#     return {"message": f"Stopped streaming for subreddit '{subreddit}'."}
-
-
-
 from fastapi import APIRouter, BackgroundTasks
 from data_streaming.reddit_producer import stream_reddit_posts, streaming_active
 

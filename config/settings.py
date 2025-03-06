@@ -5,11 +5,14 @@ class Settings(BaseSettings):
     KAFKA_BROKER: str
     POSTGRES_URL: str
     REDIS_URL: str
+    INPUT_TOPIC : str
+    OUTPUT_TOPIC : str
 
     TWITTER_API_KEY: str
     TWITTER_API_SECRET: str
     TWITTER_ACCESS_TOKEN: str
     TWITTER_ACCESS_SECRET: str
+    TWITTER_BEARER_TOKEN: str
 
     REDDIT_CLIENT_ID: str
     REDDIT_CLIENT_SECRET: str

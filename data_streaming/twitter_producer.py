@@ -1,7 +1,7 @@
-import os
+import ssl
+import json
 import tweepy
 from kafka import KafkaProducer
-import json
 from config.settings import settings
 
 
@@ -18,6 +18,10 @@ producer = KafkaProducer(
     bootstrap_servers="localhost:9092",
     value_serializer=lambda v: json.dumps(v).encode("utf-8")
 )
+
+ssl._create_default_https_context = ssl._create_unverified_context
+
+client = tweepy.Client(bearer_token=BEARER_TOKEN)
 
 # Custom Twitter Stream Listener
 class TwitterStream(tweepy.StreamingClient):
