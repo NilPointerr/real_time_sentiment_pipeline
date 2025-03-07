@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, from_json, from_unixtime
+from pyspark.sql.functions import col, from_json, from_unixtime, expr
 import logging
 from pyspark.sql.types import StructType, StringType, IntegerType, LongType
 
@@ -22,13 +22,13 @@ def clean_reddit_data(kafka_broker: str, input_topic: str, output_topic: str):
         spark.sparkContext.setLogLevel("ERROR")  
         logger.info("✅ Spark session initialized successfully.")
 
-        # Define Schema
-        reddit_schema = StructType()
-        reddit_schema = reddit_schema.add("id", StringType(), True)
-        reddit_schema = reddit_schema.add("text", StringType(), True)
-        reddit_schema = reddit_schema.add("score", IntegerType(), True)
-        reddit_schema = reddit_schema.add("comments", IntegerType(), True)
-        reddit_schema = reddit_schema.add("timestamp", LongType(), True)
+        # Define Schema (Only required columns)
+        reddit_schema = StructType() \
+            .add("title", StringType(), True) \
+            .add("text", StringType(), True) \
+            .add("author", StringType(), True) \
+            .add("subreddit", StringType(), True) \
+            .add("comments", IntegerType(), True)
 
         # Read streaming data from Kafka
         reddit_df = spark.readStream.format("kafka") \
@@ -48,19 +48,32 @@ def clean_reddit_data(kafka_broker: str, input_topic: str, output_topic: str):
         logger.info("✅ JSON data successfully parsed into DataFrame.")
 
         # 🧹 Step 1: Handle missing values
-        reddit_df = reddit_df.fillna({"text": "No text", "score": 0, "comments": 0})
+        reddit_df = reddit_df.fillna({
+            "title": "No Title", 
+            "text": "No text", 
+            "author": "unknown", 
+            "subreddit": "unknown", 
+            "comments": 0
+        })
+        # 🧹 Step 2: Remove duplicates
+        reddit_df = reddit_df.dropDuplicates(["title", "text"])
 
-        # 🧹 Step 2: Standardize timestamp
-        reddit_df = reddit_df.withColumn("datetime", from_unixtime(col("timestamp")))
+        # 📝 Log count before filtering
+        # count_before = reddit_df.count()
+        # logger.info(f"🔢 Total records before filtering: {count_before}")
 
-        # 🧹 Step 3: Remove duplicates
-        reddit_df = reddit_df.dropDuplicates(["id"])
+        # 🧹 Step 3: Filter low engagement (Optional, but prevents too much data loss)
+        # reddit_df = reddit_df.filter(col("comments") > 0)
 
-        # 🧹 Step 4: Filter low-score posts (optional)
-        reddit_df = reddit_df.filter(col("score") > 1)
+        # 📝 Log count after filtering
+        # count_after = reddit_df.count()
+        # logger.info(f"🔢 Total records after filtering: {count_after}")
+
+        # if count_after == 0:
+            # logger.warning("⚠️ No records left after filtering. Check your filters!")
 
         logger.info("✅ Data cleaning steps completed successfully.")
-
+        
         # 📝 Save cleaned data to Kafka as a stream
         query = reddit_df.selectExpr("to_json(struct(*)) AS value") \
             .writeStream \
@@ -68,8 +81,7 @@ def clean_reddit_data(kafka_broker: str, input_topic: str, output_topic: str):
             .option("kafka.bootstrap.servers", kafka_broker) \
             .option("topic", output_topic) \
             .option("checkpointLocation", "/tmp/kafka_checkpoint/") \
-            .trigger(processingTime="10 seconds") \
-            .start()
+            .outputMode("append").start()
 
         logger.info("✅ Cleaned data successfully sent to Kafka topic: %s", output_topic)
 
@@ -81,6 +93,7 @@ def clean_reddit_data(kafka_broker: str, input_topic: str, output_topic: str):
     finally:
         spark.stop()
         logger.info("✅ Spark session stopped.")
+
 
 
 # from pyspark.sql import SparkSession

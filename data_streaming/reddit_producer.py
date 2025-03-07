@@ -182,10 +182,12 @@ def kafka_worker():
     while streaming_active or not data_queue.empty():
         try:
             data = data_queue.get(timeout=2)  # Wait max 2 sec for new data
-            producer.send("redditData", value=data)
+            future = producer.send("redditData", value=data)
+            future.get(timeout=10)  # Forces error to be raised if Kafka fails
             data_queue.task_done()
         except Exception as e:
-            print(f"❌ Kafka Send Error: {e}")
+            # print(f"❌ Kafka Send Error: {e}")
+            pass
 
 def stream_reddit_posts():
     """
@@ -227,7 +229,7 @@ def stream_reddit_posts():
             # Put data into the queue instead of waiting for Kafka
             data_queue.put(data)
 
-            print(f"✅ Queued: {post.title} | Subreddit: {post.subreddit.display_name}")
+            # print(f"✅ Queued: {post.title} | Subreddit: {post.subreddit.display_name}")
 
     except Exception as e:
         print(f"🔥 Error in streaming: {e}")

@@ -29,7 +29,7 @@ real-time-sentiment-analysis/
 uvicorn main:app --reload
 
 
-1. install pyspark
-2.read data from kafka topic using pyspark
-3.selecting data for sentiment analysis
+1.save selected data into mongodb after cleaning process complete
+2.
+3.
 4.analyze sentiment using data from kafka topic by using bert/bart model
