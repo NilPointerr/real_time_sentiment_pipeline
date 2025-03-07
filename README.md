@@ -24,3 +24,12 @@ real-time-sentiment-analysis/
 │── requirements.txt            # Python dependencies
 │── main.py                     # FastAPI entry point
 │── README.md                   # Project documentation
+
+
+uvicorn main:app --reload
+
+
+1.save selected data into mongodb after cleaning process complete
+2.
+3.
+4.analyze sentiment using data from kafka topic by using bert/bart model

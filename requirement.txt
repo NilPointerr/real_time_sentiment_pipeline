@@ -11,3 +11,7 @@ pandas
 scikit-learn
 transformers
 torch
+praw
+tweepy
+pyspark
+pydantic_settings
