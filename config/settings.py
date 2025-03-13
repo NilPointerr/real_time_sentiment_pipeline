@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     REDIS_URL: str
     INPUT_TOPIC : str
     OUTPUT_TOPIC : str
+    SENTIMENT_TOPIC: str
 
     TWITTER_API_KEY: str
     TWITTER_API_SECRET: str

@@ -16,3 +16,7 @@ tweepy
 pyspark
 pydantic_settings
 langdetect
+emoji
+torch
+transformers
+pandas

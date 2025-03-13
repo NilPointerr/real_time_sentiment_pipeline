@@ -1,16 +1,32 @@
 # from pyspark.sql import SparkSession
-# from pyspark.sql.functions import col, from_json, from_unixtime, expr
+# from pyspark.sql.functions import col, from_json, regexp_replace, udf
+# from pyspark.sql.types import StructType, StringType, IntegerType, BooleanType
+# from langdetect import detect
+# import emoji
 # import logging
-# from pyspark.sql.types import StructType, StringType, IntegerType, LongType
 
 # # Configure logging
 # logging.basicConfig(level=logging.INFO)
 # logger = logging.getLogger(__name__)
 
+# # Define UDF to detect English text
+# def detect_english(text):
+#     try:
+#         return detect(text) == "en"
+#     except:
+#         return False  # If detection fails, assume non-English
+
+# is_english_udf = udf(detect_english, BooleanType())  # Ensure BooleanType
+
+# # Define UDF to replace emojis with text
+# def replace_emojis(text):
+#     if text:
+#         return emoji.demojize(text, delimiters=(" ", " "))  # Converts "😡" to " angry_face "
+#     return text
+
+# replace_emojis_udf = udf(replace_emojis, StringType())  # Ensure StringType
+
 # def clean_reddit_data(kafka_broker: str, input_topic: str, output_topic: str):
-#     """
-#     Cleans Reddit data streamed from Kafka and writes back the cleaned data.
-#     """
 #     try:
 #         # Initialize Spark Session
 #         spark = SparkSession.builder \
@@ -19,10 +35,10 @@
 #             .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0") \
 #             .getOrCreate()
 
-#         spark.sparkContext.setLogLevel("ERROR")  
+#         spark.sparkContext.setLogLevel("ERROR")
 #         logger.info("✅ Spark session initialized successfully.")
 
-#         # Define Schema (Only required columns)
+#         # Define Schema
 #         reddit_schema = StructType() \
 #             .add("title", StringType(), True) \
 #             .add("text", StringType(), True) \
@@ -41,25 +57,35 @@
 
 #         # Convert Kafka value (binary) to JSON
 #         reddit_df = reddit_df.selectExpr("CAST(value AS STRING) as json")
-
-#         # Convert JSON to structured DataFrame
 #         reddit_df = reddit_df.select(from_json(col("json"), reddit_schema).alias("data")).select("data.*")
 
 #         logger.info("✅ JSON data successfully parsed into DataFrame.")
 
 #         # 🧹 Step 1: Handle missing values
 #         reddit_df = reddit_df.fillna({
-#             "title": "No Title", 
-#             "text": "No text", 
-#             "author": "unknown", 
-#             "subreddit": "unknown", 
+#             "title": "No Title",
+#             "text": "No text",
+#             "author": "unknown",
+#             "subreddit": "unknown",
 #             "comments": 0
 #         })
-#         # 🧹 Step 2: Remove duplicates
+
+#         # 🧹 Step 2: Remove newlines from text and title
+#         reddit_df = reddit_df.withColumn("title", regexp_replace(col("title"), "\n", " ")) \
+#                              .withColumn("text", regexp_replace(col("text"), "\n", " "))
+
+#         # 🧹 Step 3: Convert emojis to text
+#         reddit_df = reddit_df.withColumn("title", replace_emojis_udf(col("title"))) \
+#                              .withColumn("text", replace_emojis_udf(col("text")))
+
+#         # 🧹 Step 4: Remove duplicates
 #         reddit_df = reddit_df.dropDuplicates(["title", "text"])
 
+#         # 🧹 Step 5: Filter only English data
+#         reddit_df = reddit_df.filter(is_english_udf(col("text")))
+
 #         logger.info("✅ Data cleaning steps completed successfully.")
-        
+
 #         # 📝 Save cleaned data to Kafka as a stream
 #         query = reddit_df.selectExpr("to_json(struct(*)) AS value") \
 #             .writeStream \
